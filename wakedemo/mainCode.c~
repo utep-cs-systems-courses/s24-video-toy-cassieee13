@@ -109,6 +109,9 @@ void wdt_c_handler()
 }
   
 void update_shape();
+void horizontalLine(u_char row, u_int color);
+void verticalLine(u_char col, u_int color);
+void createGame();
 
 void main()
 {
@@ -119,55 +122,55 @@ void main()
   lcd_init();
   switch_init();
   
-  enableWDTInterrupts();      /**< enable periodic interrupt */
+  //enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
   
-  clearScreen(COLOR_PURPLE);
-  while (1) {			/* forever */
-    if (redrawScreen) {
-      redrawScreen = 0;
-      update_shape();
-    }
-    P1OUT &= ~LED;	/* led off */
-    or_sr(0x10);	/**< CPU OFF */
-    P1OUT |= LED;	/* led on */
-  }
+  createGame();
 }
 
-void
-screen_update_hourglass()
+void createGame()
 {
-  static unsigned char row = screenHeight / 2, col = screenWidth / 2;
-  static char lastStep = 0;
   
-  if (step == 0 || (lastStep > step)) {
-    clearScreen(COLOR_BLUE);
-    lastStep = 0;
-  } else {
-    for (; lastStep <= step; lastStep++) {
-      int startCol = col - lastStep;
-      int endCol = col + lastStep;
-      int width = 1 + endCol - startCol;
-      
-      // a color in this BGR encoding is BBBB BGGG GGGR RRRR
-      unsigned int color = (blue << 11) | (green << 5) | red;
-      
-      fillRectangle(startCol, row+lastStep, width, 1, color);
-      fillRectangle(startCol, row-lastStep, width, 1, color);
-    }
-  }
-}  
-
-
-    
-void
-update_shape()
-{
-  screen_update_ball();
-  screen_update_hourglass();
+  clearScreen(COLOR_SKY_BLUE);
+  horizontalLine( (screenHeight/2), COLOR_BLACK);
+  verticalLine( (screenWidth/2), COLOR_BLACK);
+  u_char midWidth = screenWidth/2;
+  //playerBlue Cups
+  //screenHeight - 10 and -32 ensure playerBlue cups are on the top of the screen
+  drawRectOutline(midWidth+2,screenHeight-30,20,20,COLOR_BLUE);//left cup
+  drawRectOutline(midWidth-22,screenHeight-30,20,20,COLOR_BLUE);//right cup
+  drawRectOutline(midWidth-11,screenHeight-52,20,20,COLOR_BLUE);//top cup
+  
+  //playerRed Cups
+  //the rowMin = 10 to act as a thumb distance before placing the cups
+  drawRectOutline(midWidth+2,10,20,20,COLOR_RED);//draws a cup on the left side of the middle
+  drawRectOutline(midWidth-22,10,20,20,COLOR_RED); //draws a cup on the right side of the middle
+  //midwidth +2 is so that the cup is not drawn exactly in the middle of the screen
+  //midwidth -22 is to draw a cup on the right side of the left cup
+  drawRectOutline(midWidth-11,32,20,20,COLOR_RED);//the top cup
+  //32 comes from 10 + 20 (the size of the cups) and a 2 pixel offset
 }
-   
 
+void verticalLine(u_char col, u_int color)
+{
+  /*
+   * we want it to start at the beginning of the screen: row = 0
+   * col = whereever you want the line to start on the width of the screen.
+   * width = 1 because that determines the thickness
+   * height = screenHeight so that it goes across the screen
+   */
+  fillRectangle(col, 0, 1, screenHeight, color);
+}
+
+void horizontalLine(u_char row, u_int color)
+{
+  /*
+   * we want it to start at the beginning of the screen: col = 0
+   * row = whereever you want the line to start. E.g. row = screenwidth/2 is a horizontal line in the middle of the screen
+   * height = 1 because we dont want a thick line
+   */
+  fillRectangle(0, row, screenWidth, 1, color);
+}
 
 void
 __interrupt_vec(PORT2_VECTOR) Port_2(){

@@ -109,7 +109,36 @@ void wdt_c_handler()
 }
   
 void update_shape();
+void horizontalLine(u_char row, u_int color);
+void verticalLine(u_char col, u_int color);
+void createGame();
 
+//this struct will be used to keep the data of a cup so that it is easy to delete and create them 
+struct cup{
+  u_char row;
+  u_char col;
+}
+u_char midWidth = screenWidth/2;
+//global cups
+struct cup redL;
+redL.col = midWidth+2;//so that the cups aren't directly on top of each other, 2 pixel offset
+redL.row = 10;//to act as thumbing the table
+struct cup redR;
+redR.col = midWidth-22;//-22 comes from the width of redL
+redR.row = 10;
+struct cup redT;
+redT.col = midWidth - 11;//to center the cup on top
+redT.row = 32;//10 + 20 + 2 for offset
+struct cup blueL;
+blueL.col = midWidth+2;
+blueL.row = screenHeight-30;
+struct cup blueR;
+blueR.col = midWidth-22;
+blueR.row = screenHeight-30;
+struct cup blueT;
+blueT.col = midWidth-11;
+blueT.row = screenHeight-52;
+  
 void main()
 {
   
@@ -119,55 +148,51 @@ void main()
   lcd_init();
   switch_init();
   
-  enableWDTInterrupts();      /**< enable periodic interrupt */
+  //enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
   
-  clearScreen(COLOR_PURPLE);
-  while (1) {			/* forever */
-    if (redrawScreen) {
-      redrawScreen = 0;
-      update_shape();
-    }
-    P1OUT &= ~LED;	/* led off */
-    or_sr(0x10);	/**< CPU OFF */
-    P1OUT |= LED;	/* led on */
-  }
+  createGame();
 }
 
-void
-screen_update_hourglass()
+void createGame()
 {
-  static unsigned char row = screenHeight / 2, col = screenWidth / 2;
-  static char lastStep = 0;
   
-  if (step == 0 || (lastStep > step)) {
-    clearScreen(COLOR_BLUE);
-    lastStep = 0;
-  } else {
-    for (; lastStep <= step; lastStep++) {
-      int startCol = col - lastStep;
-      int endCol = col + lastStep;
-      int width = 1 + endCol - startCol;
-      
-      // a color in this BGR encoding is BBBB BGGG GGGR RRRR
-      unsigned int color = (blue << 11) | (green << 5) | red;
-      
-      fillRectangle(startCol, row+lastStep, width, 1, color);
-      fillRectangle(startCol, row-lastStep, width, 1, color);
-    }
-  }
-}  
-
-
-    
-void
-update_shape()
-{
-  screen_update_ball();
-  screen_update_hourglass();
+  clearScreen(COLOR_SKY_BLUE);
+  horizontalLine( (screenHeight/2), COLOR_BLACK);
+  verticalLine( (screenWidth/2), COLOR_BLACK);
+  
+  //playerBlue Cups
+  drawRectOutline(blueL.col,blueL.row,20,20,COLOR_BLUE);//left cup
+  drawRectOutline(blueR.col,blueR.row,20,20,COLOR_BLUE);//right cup
+  drawRectOutline(blueT.col,blueT.row,20,20,COLOR_BLUE);//top cup
+  
+  //playerRed Cups
+  drawRectOutline(redL.col,redL.row,20,20,COLOR_RED);//left cup
+  drawRectOutline(redR.col,redR.row,20,20,COLOR_RED);//right cup
+  drawRectOutline(redT.col,redT.row,20,20,COLOR_RED);//the top cup
+  
 }
-   
 
+void verticalLine(u_char col, u_int color)
+{
+  /*
+   * we want it to start at the beginning of the screen: row = 0
+   * col = whereever you want the line to start on the width of the screen.
+   * width = 1 because that determines the thickness
+   * height = screenHeight so that it goes across the screen
+   */
+  fillRectangle(col, 0, 1, screenHeight, color);
+}
+
+void horizontalLine(u_char row, u_int color)
+{
+  /*
+   * we want it to start at the beginning of the screen: col = 0
+   * row = whereever you want the line to start. E.g. row = screenwidth/2 is a horizontal line in the middle of the screen
+   * height = 1 because we dont want a thick line
+   */
+  fillRectangle(0, row, screenWidth, 1, color);
+}
 
 void
 __interrupt_vec(PORT2_VECTOR) Port_2(){
