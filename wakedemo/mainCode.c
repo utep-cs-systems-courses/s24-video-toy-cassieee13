@@ -17,6 +17,7 @@
 char blue = 31, green = 0, red = 31;
 unsigned char step = 0;
 
+
 static char 
 switch_update_interrupt_sense()
 {
@@ -94,7 +95,7 @@ void wdt_c_handler()
     }
 
     {				/* update hourglass */
-      if (switches & SW3) green = (green + 1) % 64;
+      if (switches & SW3);
       if (switches & SW2) blue = (blue + 2) % 32;
       if (switches & SW1) red = (red - 3) % 32;
       if (step <= 30)
@@ -114,30 +115,10 @@ void verticalLine(u_char col, u_int color);
 void createGame();
 
 //this struct will be used to keep the data of a cup so that it is easy to delete and create them 
-struct cup{
-  u_char row;
+typedef struct cup{
   u_char col;
-}
-u_char midWidth = screenWidth/2;
-//global cups
-struct cup redL;
-redL.col = midWidth+2;//so that the cups aren't directly on top of each other, 2 pixel offset
-redL.row = 10;//to act as thumbing the table
-struct cup redR;
-redR.col = midWidth-22;//-22 comes from the width of redL
-redR.row = 10;
-struct cup redT;
-redT.col = midWidth - 11;//to center the cup on top
-redT.row = 32;//10 + 20 + 2 for offset
-struct cup blueL;
-blueL.col = midWidth+2;
-blueL.row = screenHeight-30;
-struct cup blueR;
-blueR.col = midWidth-22;
-blueR.row = screenHeight-30;
-struct cup blueT;
-blueT.col = midWidth-11;
-blueT.row = screenHeight-52;
+  u_char row;
+} cup;
   
 void main()
 {
@@ -148,15 +129,25 @@ void main()
   lcd_init();
   switch_init();
   
-  //enableWDTInterrupts();      /**< enable periodic interrupt */
+  enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
-  
-  createGame();
+  clearScreen(COLOR_PINK);
+  drawString5x7(screenWidth/5,screenHeight/2,"msp430 Cup Pong", COLOR_RED, COLOR_PINK); 
+  //createGame();
 }
 
 void createGame()
 {
-  
+  u_char midWidth = screenWidth/2;
+  //cups
+  cup redL = {midWidth+2,10};
+  //so that the cups aren't directly on top of each other, 2 pixel offset
+  cup redR = {(midWidth-22),10};//-22 comes from the width of red
+  cup redT = {(midWidth - 11),32};//to center the cup on top, 10 + 20 + 2 for offset
+  cup blueL = {(midWidth+2), (screenHeight-30)};
+  cup blueR = {(midWidth-22),(screenHeight-30)};
+  cup blueT = {(midWidth-11), (screenHeight-52)};
+
   clearScreen(COLOR_SKY_BLUE);
   horizontalLine( (screenHeight/2), COLOR_BLACK);
   verticalLine( (screenWidth/2), COLOR_BLACK);
