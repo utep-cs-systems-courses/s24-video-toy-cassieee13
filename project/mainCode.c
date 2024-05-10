@@ -2,6 +2,7 @@
 #include <libTimer.h>
 #include "lcdutils.h"
 #include "lcddraw.h"
+#include "buzzer.h"
 
 // WARNING: LCD DISPLAY USES P1.0.  Do not touch!!! 
 
@@ -110,18 +111,18 @@ u_char blueCups = 3;
 void main()
 {
   
-  P1DIR |= LED;		/**< Green led on when CPU on */
-  P1OUT |= LED;
   configureClocks();
   lcd_init();
   switch_init();
-  
+  buzzer_init();
   //enableWDTInterrupts();      /**< enable periodic interrupt */
   or_sr(0x8);	              /**< GIE (enable interrupts) */
   clearScreen(COLOR_PINK);
   drawString5x7(screenWidth/5,screenHeight/2,"msp430 Cup Pong", COLOR_RED, COLOR_PINK); 
-  //createGame();
+  
 }
+
+u_char win = 0;// for the buzzer
 
 void createGame()
 {
@@ -150,6 +151,7 @@ void createGame()
   //make sure cup counts restart
   redCups = 3;
   blueCups = 3;
+  win = 0;
 }
 //global player
 u_char playerTurn = 0;
@@ -166,7 +168,12 @@ void button_update()
     moveBallRight(playerTurn);
   }
   else if( button == 4){
+    if( win ){
+      buzzer_set_period(0); //turn off buzzer after win
+    }
+    else{
     shoot(playerTurn);
+    }
   }
 }
 
@@ -252,17 +259,28 @@ void shoot(u_char player)
   }
   
 }
+
+
 void checkWin()
 {
   if(redCups == 0){
+    win = 1;
     clearScreen(COLOR_BLUE);
     drawString5x7(screenWidth/5, screenHeight/2, "PLAYER BLUE WON!", COLOR_WHITE, COLOR_BLUE);
+
+    buzzer_set_period(LITTLE_C);
+    
     P1DIR |= BIT0;
     P1OUT ^= BIT0;
+   
   }
   if(blueCups == 0){
+    win = 1;
     clearScreen(COLOR_RED);
     drawString5x7(screenWidth/5,screenHeight/2, "PLAYER RED WON!", COLOR_WHITE, COLOR_RED);
+    buzzer_set_period(BIG_C);
+    P1DIR |= LED;
+    P1OUT |= LED;
   }
 }
 void horizontalLine(u_char row, u_int color)
